@@ -41,9 +41,13 @@ wire							i_type;
 wire	[REG_ADDR_W-1	:	0]	s1, s2, s3;
 wire 	[IM_W-1			:	0]	im;
 
-reg		[INST_W-1		:	0]	pc, pc_add_four, pc_branch;
-reg								stall_r, stall_w;
+reg		[INST_W-1		:	0]	pc;
+wire	[INST_W-1		:	0]	pc_add_four, pc_branch, next_pc;
+reg								stall_r;
+assign							stall_w;
 
+
+wire 	[REG_ADDR_W-1	:	0]	read_reg_0, read_reg_1, write_reg;
 wire							write_reg_en;
 wire	[DATA_W-1		:	0]	write_data, read_data_0, read_data_1;
 
@@ -67,22 +71,30 @@ assign	s3 = i_i_inst[INST_W - OP_W - REG_ADDR_W - 1: INST_W - OP_W - 2*REG_ADDR_
 
 assign	im = i_i_inst[IM_W-1: 0];
 
+assign	read_reg_0	= s2;
+assign	read_reg_1	= i_type ? s1 : s3;
+assign	write_reg	= s1;
+
 assign	write_reg_en = op[2] | (op[1] & op[0]) | stall_r;
-assign 	write_data = alu_result;
+assign 	write_data = stall_r ? i_d_rdata : alu_result;
 
 
-Register registers(i_clk, i_rst_n, s2, s3, s1, write_data, write_reg_en, read_data_0, read_data_1);
+Register registers(i_clk, i_rst_n, read_reg_0, read_reg_1, write_reg, write_data, write_reg_en, read_data_0, read_data_1);
 Alu alu(op, read_data_0, read_data_1, im, alu_result, zero, over_flow);
 
 assign	branch = (op[3] & ~op[1]) & (zero ^ op[0]);
 
 assign  pc_add_four = pc + {{(INST_W-3){1'b0}}, 3'd4};
 assign	pc_branch	= pc_add_four + {{(INST_ADDR_W - IM_W){1'b0}}, im};
+assign	next_pc		= branch ? pc_branch : pc_add_four;
 
-assign	o_i_addr	= branch ? pc_branch : pc_add_four;
-assign	o_d_wen		= ~op[3] & ~op[2] & op[1] & op[0];
+
+assign	o_i_addr	= pc;
+assign	o_d_wen		= ~op[3] & ~op[2] & op[1] & ~op[0];
 assign	o_d_addr	= alu_result;
-assign	o_d_wdata	= write_data;		// !!!!!!!!!
+assign	o_d_wdata	= read_data_1;
+
+assign	stall_w		= (~op[3] & ~op[2] & ~op[1] & op[0]) ^ stall_r;
 
 inst_mem inst_mem(i_clk, i_rst_n, o_i_addr, i_i_inst);
 data_mem data_mem(i_clk, i_rst_n, o_d_wen, o_d_addr, o_d_wdata, i_d_rdata);
@@ -99,6 +111,15 @@ data_mem data_mem(i_clk, i_rst_n, o_d_wen, o_d_addr, o_d_wdata, i_d_rdata);
 // ---------------------------------------------------------------------------
 // ---- Write your sequential block design here ---- //
 
-
+always@(posedge i_clk or negedge i_rst_n) begin
+	if(~i_rst_n) begin
+		pc <= {INST_ADDR_W{1'b0}};
+		stall_r <= 0;
+	end
+	else begin
+		pc <= next_pc;
+		stall_r <= stall_w;
+	end
+end
 
 endmodule
