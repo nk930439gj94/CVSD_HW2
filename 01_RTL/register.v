@@ -1,7 +1,7 @@
 module Register #(
     parameter   DATA_W = 32,
     parameter   REG_N = 32,
-    parameter   REG_ADDR_W = 5,
+    parameter   REG_ADDR_W = 5
 )(
     input                           i_clk,
     input                           i_rst_n,
@@ -11,10 +11,10 @@ module Register #(
     input   [DATA_W-1       : 0]    write_data,
     input                           write_en,
     output  [DATA_W-1       : 0]    read_data_0,
-    output  [DATA_W-1       : 0]    read_data_1,
+    output  [DATA_W-1       : 0]    read_data_1
 );
 
-reg [DATA_W-1       : 0]    reg_file_r[0:REG_N]-1, reg_file_w[0:REG_N-1];
+reg [DATA_W-1       : 0]    reg_file_r[0:REG_N-1], reg_file_w[0:REG_N-1];
 
 assign read_data_0 = reg_file_r[read_reg_0];
 assign read_data_1 = reg_file_r[read_reg_1];
@@ -36,7 +36,7 @@ always@(posedge i_clk or negedge i_rst_n) begin
     end
     else begin
         for(k=0; k<REG_N; k=k+1)
-            reg_file_r[k] <= reg_file_w;
+            reg_file_r[k] <= reg_file_w[k];
     end
 end
 

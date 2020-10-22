@@ -12,7 +12,7 @@ module core #(                             //Don't modify interface
 	output [ DATA_W-1 : 0 ] o_d_wdata,
 	input  [ DATA_W-1 : 0 ] i_d_rdata,
 	output [        1 : 0 ] o_status,
-	output                  o_status_valid,
+	output                  o_status_valid
 );
 
 // LW   000001	I
@@ -44,7 +44,7 @@ wire 	[IM_W-1			:	0]	im;
 reg		[INST_W-1		:	0]	pc;
 wire	[INST_W-1		:	0]	pc_add_four, pc_branch, next_pc;
 reg								stall_r;
-assign							stall_w;
+wire							stall_w;
 
 
 wire 	[REG_ADDR_W-1	:	0]	read_reg_0, read_reg_1, write_reg;
