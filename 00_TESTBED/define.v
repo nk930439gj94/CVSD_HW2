@@ -3,6 +3,7 @@
 `define HCYCLE      (`CYCLE/2)
 `define MAX_CYCLE   300
 `define Inst "../00_TESTBED/PATTERN/inst.dat"
+`define Status "../00_TESTBED/PATTERN/status.dat"
 
 // opcode definition
 `define OP_LW 1

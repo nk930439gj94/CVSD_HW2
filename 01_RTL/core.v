@@ -96,7 +96,7 @@ assign	o_d_addr	= alu_result;
 assign	o_d_wdata	= read_data_1;
 assign	o_status	= (op == 6'b1010) ? 2'd3 :
 					  (over_flow) ? 2'd2 : {1'b0, i_type};
-assign	o_status_valid = ( (op[3] | op[2] | op[1] | ~op[0]) | stall_w ) & ~(op[03] | op[2] | op[1] | op[0]);
+assign	o_status_valid = ( (op[3] | op[2] | op[1] | ~op[0]) | stall_w ) & (op[3] | op[2] | op[1] | op[0]);
 
 inst_mem inst_mem(i_clk, i_rst_n, o_i_addr, i_i_inst);
 data_mem data_mem(i_clk, i_rst_n, o_d_wen, o_d_addr, o_d_wdata, i_d_rdata);
