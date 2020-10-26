@@ -79,8 +79,8 @@ assign	write_reg_en = op[2] | (op[1] & op[0]) | stall_r;
 assign 	write_data = stall_r ? i_d_rdata : alu_result;
 
 
-Register registers(i_clk, i_rst_n, read_reg_0, read_reg_1, write_reg, write_data, write_reg_en, read_data_0, read_data_1);
-Alu alu(op, read_data_0, read_data_1, im, alu_result, zero, over_flow);
+Register u_register(i_clk, i_rst_n, read_reg_0, read_reg_1, write_reg, write_data, write_reg_en, read_data_0, read_data_1);
+Alu u_alu(op, read_data_0, read_data_1, im, alu_result, zero, over_flow);
 
 assign	branch = (op[3] & ~op[1]) & (zero ^ op[0]);
 
@@ -98,8 +98,6 @@ assign	o_status	= (op == 6'b1010) ? 2'd3 :
 					  (over_flow) ? 2'd2 : {1'b0, i_type};
 assign	o_status_valid = ( (op[3] | op[2] | op[1] | ~op[0]) | stall_w ) & (op[3] | op[2] | op[1] | op[0]);
 
-inst_mem inst_mem(i_clk, i_rst_n, o_i_addr, i_i_inst);
-data_mem data_mem(i_clk, i_rst_n, o_d_wen, o_d_addr, o_d_wdata, i_d_rdata);
 
 // ---------------------------------------------------------------------------
 // Combinational Blocks

@@ -42,7 +42,7 @@ assign  mem_addr_of     = mem_addr[DATA_W] ^ mem_addr[DATA_W-1];
 
 assign  add_i0          = {i_in_0[DATA_W-1], i_in_0};
 assign  add_i1          = i_op[1]? {i_in_1[DATA_W-1], i_in_1}: {{(DATA_W-IM_W+1){i_im[IM_W-1]}}, i_im};
-assign  add_result      = {i_in_0[DATA_W-1], i_in_0} + {i_in_1[DATA_W-1], i_in_1};
+assign  add_result      = add_i0 + add_i1;
 assign  add_result_of   = add_result[DATA_W] ^ add_result[DATA_W-1];
 
 assign  sub_result      = {i_in_0[DATA_W-1], i_in_0} - {i_in_1[DATA_W-1], i_in_1};
@@ -57,7 +57,7 @@ assign  o_alu_result    = alu_result;
 assign  o_overflow      = overflow;
 
 
-always@(i_op or i_in_0 or i_in_1 or i_im) begin
+always@(*) begin
     alu_result = {DATA_W{1'b0}};
     overflow = 1'b0;
 
