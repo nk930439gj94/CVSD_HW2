@@ -8,7 +8,7 @@
 
 // testbench
 // -----------------------------------------------------------------------------
-../00_TESTBED/testbed.v
+../00_TESTBED/testbed.vp
 ../00_TESTBED/inst_mem.vp
 ../00_TESTBED/data_mem.vp
 

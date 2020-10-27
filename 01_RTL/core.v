@@ -36,6 +36,12 @@ parameter REG_N = 32;
 // Wires and Registers
 // ---------------------------------------------------------------------------
 // ---- Add your own wires and registers here if needed ---- //
+`define STATUS_IDLE		2'b00
+`define STATUS_READ 	2'b01
+`define	STATUS_WRITE 	2'b10
+`define	STATUS_UNKNOWN	2'b11
+reg		[2:0]	CS, NS;
+
 wire	[OP_W-1			:	0]	op;
 wire							i_type;
 wire	[REG_ADDR_W-1	:	0]	s1, s2, s3;
@@ -43,8 +49,6 @@ wire 	[IM_W-1			:	0]	im;
 
 reg		[INST_W-1		:	0]	pc;
 wire	[INST_W-1		:	0]	pc_add_four, pc_branch, next_pc;
-reg								stall_r;
-wire							stall_w;
 
 
 wire 	[REG_ADDR_W-1	:	0]	read_reg_0, read_reg_1, write_reg;
@@ -61,6 +65,7 @@ wire							zero, branch;
 // Continuous Assignment
 // ---------------------------------------------------------------------------
 // ---- Add your own wire data assignments here if needed ---- //
+
 assign	op = i_i_inst[INST_W-1: INST_W - OP_W];
 assign	i_type = op[3] | (~op[2] & (op[1] ^ op[0])) | (op[2] & ~op[1] & op[0]);
 
@@ -75,8 +80,8 @@ assign	read_reg_0	= s2;
 assign	read_reg_1	= i_type ? s1 : s3;
 assign	write_reg	= s1;
 
-assign	write_reg_en = op[2] | (op[1] & op[0]) | stall_r;
-assign 	write_data = stall_r ? i_d_rdata : alu_result;
+assign	write_reg_en = (CS == `STATUS_WRITE) & (op[2] | (~op[3] & op[0]));
+assign 	write_data = (~op[3] & ~op[2] & ~op[1] & op[0]) ? i_d_rdata : alu_result;
 
 
 Register u_register(i_clk, i_rst_n, read_reg_0, read_reg_1, write_reg, write_data, write_reg_en, read_data_0, read_data_1);
@@ -86,17 +91,16 @@ assign	branch = (op[3] & ~op[1]) & (zero ^ op[0]);
 
 assign  pc_add_four = pc + {{(INST_W-3){1'b0}}, 3'd4};
 assign	pc_branch	= pc_add_four + {{(INST_ADDR_W - IM_W){1'b0}}, im};
-assign	stall_w		= (~op[3] & ~op[2] & ~op[1] & op[0]) & ~stall_r;
-assign	next_pc		= branch ? pc_branch : (stall_w ? pc : pc_add_four);
+assign	next_pc		= (CS != `STATUS_READ) ? pc : branch ? pc_branch : pc_add_four;
 
 
-assign	o_i_addr	= next_pc;
-assign	o_d_wen		= ~op[3] & ~op[2] & op[1] & ~op[0];
+assign	o_i_addr	= pc;
+assign	o_d_wen		= (CS == `STATUS_WRITE) & (~op[3] & ~op[2] & op[1] & ~op[0]);
 assign	o_d_addr	= alu_result;
 assign	o_d_wdata	= read_data_1;
 assign	o_status	= (op == 6'b1010) ? 2'd3 :
 					  (over_flow) ? 2'd2 : {1'b0, i_type};
-assign	o_status_valid = ( (op[3] | op[2] | op[1] | ~op[0]) | stall_w ) & (op[3] | op[2] | op[1] | op[0]);
+assign	o_status_valid = (CS == `STATUS_WRITE);
 
 
 // ---------------------------------------------------------------------------
@@ -104,6 +108,15 @@ assign	o_status_valid = ( (op[3] | op[2] | op[1] | ~op[0]) | stall_w ) & (op[3] 
 // ---------------------------------------------------------------------------
 // ---- Write your conbinational block design here ---- //
 
+always@(*) begin
+	NS = CS;
+	case(CS)
+		`STATUS_IDLE:	NS = `STATUS_READ;
+		`STATUS_READ:	NS = `STATUS_WRITE;
+		`STATUS_WRITE:	NS = `STATUS_READ;
+		default:		NS = `STATUS_UNKNOWN;
+	endcase
+end
 
 
 // ---------------------------------------------------------------------------
@@ -113,12 +126,12 @@ assign	o_status_valid = ( (op[3] | op[2] | op[1] | ~op[0]) | stall_w ) & (op[3] 
 
 always@(posedge i_clk or negedge i_rst_n) begin
 	if(~i_rst_n) begin
-		pc <= {{INST_ADDR_W{1'b1}}, 2'b0};
-		stall_r <= 1'b0;
+		pc <= {INST_ADDR_W{1'b0}};
+		CS <= `STATUS_IDLE;
 	end
 	else begin
 		pc <= next_pc;
-		stall_r <= stall_w;
+		CS <= NS;
 	end
 end
 
