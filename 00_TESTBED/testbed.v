@@ -57,8 +57,10 @@ module testbed;
 	
 	reg		[1	: 0]	golden_status[0:15];
 	reg		[1	: 0]	test_cs, test_ns;
-	reg 	[15	: 0]	test_idx_r;
-	wire	[15 : 0]	test_idx_w;
+	reg 	[5	: 0]	test_idx_r;
+	wire	[5	: 0]	test_idx_w;
+
+	reg					all_correct;
 	
 	initial	$readmemb (`Status, golden_status);
 
@@ -71,9 +73,13 @@ module testbed;
 			Test_Read	: test_ns = Test_Write;
 			Test_Write	: begin
 				if(mips_status_valid)
-					test_ns = (test_idx_r == 16) ? Test_Done : Test_Read;
+					test_ns = (test_idx_r == 15) ? Test_Done : Test_Read;
 			end
-			Test_Done	: test_ns = Test_Done;
+			Test_Done	: begin
+				if(all_correct)
+					$display("PASS");
+				$finish;
+			end
 		endcase
 	end
 	
@@ -82,8 +88,10 @@ module testbed;
 		if((test_cs == Test_Write) & mips_status_valid) begin
 			if(mips_status == golden_status[test_idx_r])
 				$display("Test[%d]: Correct!", test_idx_r);
-			else
+			else begin
 				$display("Test[%d]: Error! | golden: %b, yours: %b", test_idx_r, golden_status[test_idx_r], mips_status);
+				all_correct <= 1'b0;				
+			end
 		end
 	end
 
@@ -91,6 +99,7 @@ module testbed;
 		if(~rst_n) begin
 			test_cs <= Test_Idle;
 			test_idx_r <= 0;
+			all_correct <= 1'b1;
 		end
 		else begin
 			test_cs <= test_ns;
@@ -118,9 +127,9 @@ module Clkgen (
         rst_n = 1; # (0.25 * `CYCLE);
         rst_n = 0; # (1 * `CYCLE);
         rst_n = 1; # (`MAX_CYCLE * `CYCLE);
-        // $display("----------------------------------------------");
-        // $display("Latency of your design is over 100000 cycles!!");
-        // $display("----------------------------------------------");
+		$display("-------------------------------------------");
+        $display("Latency of your design is over 300 cycles!!");
+        $display("-------------------------------------------");
         $finish;
     end
 endmodule
