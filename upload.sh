@@ -1,2 +1,2 @@
-scp 01_RTL/*.v iclab:CVSD_HW2/01_RTL
-scp 00_TESTBED/*.v iclab:CVSD_HW2/00_TESTBED
+scp 01_RTL/*.v iclab:CVSD_HW/CVSD_HW2/01_RTL
+scp 00_TESTBED/*.v iclab:CVSD_HW/CVSD_HW2/00_TESTBED
