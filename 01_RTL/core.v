@@ -87,10 +87,10 @@ assign	branch = (op[3] & ~op[1]) & (zero ^ op[0]);
 assign  pc_add_four = pc + {{(INST_W-3){1'b0}}, 3'd4};
 assign	pc_branch	= pc_add_four + {{(INST_ADDR_W - IM_W){1'b0}}, im};
 assign	stall_w		= (~op[3] & ~op[2] & ~op[1] & op[0]) & ~stall_r;
-assign	next_pc		= branch ? pc_branch : stall_w ? pc : pc_add_four;
+assign	next_pc		= branch ? pc_branch : (stall_w ? pc : pc_add_four);
 
 
-assign	o_i_addr	= pc;
+assign	o_i_addr	= next_pc;
 assign	o_d_wen		= ~op[3] & ~op[2] & op[1] & ~op[0];
 assign	o_d_addr	= alu_result;
 assign	o_d_wdata	= read_data_1;
@@ -113,7 +113,7 @@ assign	o_status_valid = ( (op[3] | op[2] | op[1] | ~op[0]) | stall_w ) & (op[3] 
 
 always@(posedge i_clk or negedge i_rst_n) begin
 	if(~i_rst_n) begin
-		pc <= {INST_ADDR_W{1'b0}};
+		pc <= {{INST_ADDR_W{1'b1}}, 2'b0};
 		stall_r <= 1'b0;
 	end
 	else begin
